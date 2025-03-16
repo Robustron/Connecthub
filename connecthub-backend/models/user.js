@@ -1,3 +1,4 @@
+// connecthub-backend/models/user.js
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
@@ -24,6 +25,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["user", "provider", "admin"],
       default: "user",
+    },
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active", // Default status
     },
     location: {
       type: {

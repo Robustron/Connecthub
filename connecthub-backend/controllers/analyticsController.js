@@ -1,3 +1,4 @@
+// connecthub-backend/controllers/analyticsController.js
 const Analytics = require("../models/Analytics");
 const User = require("../models/user");
 const Booking = require("../models/Booking");

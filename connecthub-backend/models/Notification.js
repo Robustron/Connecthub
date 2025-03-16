@@ -1,3 +1,4 @@
+// connecthub-backend/models/Notification.js
 const mongoose = require("mongoose");
 
 const notificationSchema = new mongoose.Schema(
@@ -13,7 +14,7 @@ const notificationSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["booking", "message", "review", "payment", "system"],
+      enum: ["booking", "message", "review", "payment", "service", "system"],
       required: true,
     },
     relatedId: {
@@ -22,7 +23,7 @@ const notificationSchema = new mongoose.Schema(
     },
     onModel: {
       type: String,
-      enum: ["Booking", "Message", "Review", "Payment"],
+      enum: ["Booking", "Message", "Review", "Payment", "Service"],
     },
     read: {
       type: Boolean,
@@ -31,7 +32,7 @@ const notificationSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  },
+  }
 );
 
 const Notification = mongoose.model("Notification", notificationSchema);

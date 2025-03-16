@@ -1,3 +1,4 @@
+// connecthub-backend/models/Booking.js
 const mongoose = require("mongoose");
 
 const bookingSchema = new mongoose.Schema(
@@ -36,10 +37,9 @@ const bookingSchema = new mongoose.Schema(
       default: "pending",
     },
   },
-  {},
   {
     timestamps: true,
-  },
+  }
 );
 
 const Booking = mongoose.model("Booking", bookingSchema);

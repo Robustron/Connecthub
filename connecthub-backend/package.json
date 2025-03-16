@@ -7,9 +7,11 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint ."
+    
   },
   "dependencies": {
     "@paypal/checkout-server-sdk": "^1.0.3",
+    "@paypal/react-paypal-js": "^8.7.0",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^x.x.x",
     "cors": "^2.x.x",
@@ -22,13 +24,14 @@
     "helmet": "^x.x.x",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
+    "mapbox-gl": "^3.7.0",
     "mongoose": "^x.x.x",
     "morgan": "^x.x.x",
     "multer": "^1.4.5-lts.1",
     "node-cron": "^x.x.x",
     "paypal": "^1.0.1",
     "sanitize-html": "^2.13.1",
-    "socket.io": "^x.x.x"
+    "socket.io": "^4.8.0"
   },
   "devDependencies": {
     "eslint": "^9.12.0",

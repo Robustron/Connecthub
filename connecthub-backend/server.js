@@ -1,16 +1,20 @@
+// connecthub-backend/server.js
+
+const http = require('http');
+const socketIo = require('socket.io');
 /* eslint-disable import/no-extraneous-dependencies */
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const socketIo = require('socket.io');
 const cron = require('node-cron');
 const csrf = require('csurf');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
+const axios = require('axios'); // Import axios for PayPal token
 require('dotenv').config();
 
 /* eslint-enable import/no-extraneous-dependencies */
@@ -26,10 +30,19 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 
+
 const { generateDailyAnalytics } = require('./controllers/analyticsController');
 const sanitizeUserInput = require('./middleware/sanitizeUserInput'); // Ensure this is correct
 
 const app = express();
+const server = http.createServer(app);
+const io = socketIo(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    methods: ['GET', 'POST'],
+  },
+});
+
 const csrfProtection = csrf({ cookie: true });
 
 // Middleware
@@ -66,21 +79,26 @@ mongoose.connect(process.env.MONGODB_URI, {
   .then(() => console.log('Connected to MongoDB'))
   .catch((err) => console.error('MongoDB connection error:', err));
 
-// Initialize server
-const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// WebSocket connection
+io.on('connection', (socket) => {
+  console.log('New client connected');
+
+  // Handle location updates
+  socket.on('updateLocation', (data) => {
+    socket.broadcast.emit('locationUpdated', data); // Broadcast location updates to other clients
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected');
+  });
+
+  socket.on('join', (userId) => {
+    socket.join(userId);
+    console.log(`User ${userId} joined their room`);
+  });
 });
 
-// Initialize Socket.IO
-const io = socketIo(server, {
-  cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    methods: ['GET', 'POST'],
-  },
-});
-
-// Middleware to make io accessible to our route handlers
+// Middleware to make io accessible to route handlers
 app.use((req, res, next) => {
   req.io = io;
   next();
@@ -120,6 +138,32 @@ app.use((req, res, next) => {
   next();
 });
 
+// PayPal access token retrieval
+const getPayPalAccessToken = async () => {
+  const response = await axios.post('https://api.sandbox.paypal.com/v1/oauth2/token', null, {
+    auth: {
+      username: process.env.PAYPAL_CLIENT_ID,
+      password: process.env.PAYPAL_SECRET,
+    },
+    params: {
+      grant_type: 'client_credentials',
+    },
+  });
+  return response.data.access_token;
+};
+
+// Middleware to set PayPal access token
+app.use(async (req, res, next) => {
+  try {
+    const token = await getPayPalAccessToken();
+    process.env.PAYPAL_ACCESS_TOKEN = token; // Store token in environment variable
+    next();
+  } catch (error) {
+    console.error('Error retrieving PayPal access token:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/services', serviceRoutes);
@@ -131,6 +175,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/admin', adminRoutes);
 
+
 // Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -138,23 +183,15 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 cron.schedule('0 0 * * *', generateDailyAnalytics);
 
 // Error handling middleware
-app.use((err, req, res) => {
+app.use((err, _req, res) => {
   console.error(err.stack);
   res.status(500).json({ message: 'Something went wrong!' });
 });
 
-// Socket.IO event handlers
-io.on('connection', (socket) => {
-  console.log('A user connected');
-
-  socket.on('join', (userId) => {
-    socket.join(userId);
-    console.log(`User ${userId} joined their room`);
-  });
-
-  socket.on('disconnect', () => {
-    console.log('User disconnected');
-  });
+// Start the server
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
 
 // Export app and io for use in other modules

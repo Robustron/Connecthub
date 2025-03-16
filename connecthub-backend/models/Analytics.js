@@ -1,3 +1,4 @@
+// connecthub-backend/models/Analytics.js
 const mongoose = require('mongoose');
 
 const analyticsSchema = new mongoose.Schema({

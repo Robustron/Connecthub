@@ -6,6 +6,7 @@ const sanitizeUserInput = [
   body("password").trim().escape(),
   body("firstName").trim().escape(),
   body("lastName").trim().escape(),
+  
   // Add more fields as needed
 ];
 
