@@ -1,0 +1,47 @@
+name: Node.js CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        node-version: [14.x, 16.x, 18.x]
+        mongodb-version: ["4.4", "5.0", "6.0"]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.8.0
+        with:
+          mongodb-version: ${{ matrix.mongodb-version }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Build project
+        run: npm run build --if-present
+
+      - name: Run tests
+        run: npm test
+        env:
+          CI: true
+          TEST_MONGODB_URI: mongodb://localhost:27017/connecthub_test
+          JWT_SECRET: "5f13d9a9e7fe85bf032f1b126337a3dce4d85fbb1147a73c4afc455ec6e6427e636029de75cfac703e1f5aef2a60c532c04d8650b6a43ea43235b2ab2cc3ee10"
+# ... existing config ...
+
